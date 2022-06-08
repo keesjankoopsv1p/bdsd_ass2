@@ -38,6 +38,7 @@ public class ClassifyMapper extends Mapper<LongWritable, Text, Text, IntWritable
         String line = lineText.toString();
         line = ScentenceCleaner.cleanSentence(line);
 
+        //for every line: calculate the score language score according to each bigram language score.
         for (int charPos = 0; charPos < line.length() -1; charPos++){
             String bigram = line.substring(charPos, charPos + 2);
             Double nlBigramScore = _nlMatrix.get(bigram);
@@ -71,12 +72,12 @@ public class ClassifyMapper extends Mapper<LongWritable, Text, Text, IntWritable
         }
     }
 
-    //c
     private HashMap<String, Double> readMatrixFile(String filePath) throws IOException {
         HashMap<String, Integer> matrix = new HashMap<>();
         HashMap<String, Double> percentageMatrix;
         Integer totalFrequencies = 0;
 
+        //get matrix from hadoop file system as a string
         FileSystem fs = FileSystem.get(URI.create(filePath), new Configuration());
         InputStream in = null;
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -87,6 +88,8 @@ public class ClassifyMapper extends Mapper<LongWritable, Text, Text, IntWritable
             IOUtils.closeStream(in);
         }
         String text = out.toString();
+
+        //convert the matrix string into a Hashmap<String bigram, Integer frequence>
         List<String> bigramArray = Arrays.asList(text.split("\n"));
         for (String bigramCombo : bigramArray){
             String bigram = bigramCombo.substring(0, 2);
@@ -94,6 +97,8 @@ public class ClassifyMapper extends Mapper<LongWritable, Text, Text, IntWritable
             matrix.put(bigram, frequence);
             totalFrequencies = totalFrequencies +  frequence;
         }
+
+        //convert the matrix to a hashmap that contains the frequency as a percentage.
         percentageMatrix = averageFrequencies(matrix, totalFrequencies);
         return percentageMatrix;
     }
